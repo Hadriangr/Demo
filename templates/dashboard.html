@@ -61,7 +61,7 @@
         <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Auditorías por Mes
       </div>
       <div class="card-body">
-        <canvas id="chartMonthly" height="220"></canvas>
+        <canvas id="chartMonthly" class="chart-canvas" height="220"></canvas>
       </div>
     </div>
   </div>
@@ -71,7 +71,7 @@
         <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Por Bodega
       </div>
       <div class="card-body d-flex align-items-center justify-content-center">
-        <canvas id="chartWarehouses" height="220"></canvas>
+        <canvas id="chartWarehouses" class="chart-canvas" height="220"></canvas>
       </div>
     </div>
   </div>
@@ -81,10 +81,10 @@
   <div class="col-md-7">
     <div class="card h-100">
       <div class="card-header bg-white">
-        <i class="bi bi-tools me-2 text-warning"></i>Unidades Dañadas por Mes
+        <i class="bi bi-tools me-2 text-warning"></i>Unidades Dañadas por Producto ({{ month_label }})
       </div>
       <div class="card-body">
-        <canvas id="chartDamagedByMonth" height="220"></canvas>
+        <canvas id="chartDamagedByProduct" class="chart-canvas" height="220"></canvas>
         <hr>
         <h6 class="small text-muted mb-2">Productos dañados en {{ month_label }}</h6>
         <div class="table-responsive">
@@ -118,7 +118,7 @@
         <i class="bi bi-box-seam me-2 text-danger"></i>Productos Sin Stock Mensual
       </div>
       <div class="card-body">
-        <canvas id="chartOutStockMonthly" height="220"></canvas>
+        <canvas id="chartOutStockMonthly" class="chart-canvas" height="220"></canvas>
         <hr>
         <h6 class="small text-muted mb-2">Productos sin stock en {{ month_label }}</h6>
         <div class="table-responsive">
@@ -212,13 +212,16 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <script>
+Chart.register(ChartDataLabels);
+
 const MONTHS = {{ chart_months|safe }};
 const COUNTS = {{ chart_counts|safe }};
 const WH_LABELS = {{ wh_labels|safe }};
 const WH_COUNTS = {{ wh_counts|safe }};
-const DAMAGED_MONTH_LABELS = {{ damaged_month_labels|safe }};
-const DAMAGED_MONTH_VALUES = {{ damaged_month_values|safe }};
+const DAMAGED_PRODUCT_LABELS = {{ damaged_product_labels|safe }};
+const DAMAGED_PRODUCT_VALUES = {{ damaged_product_values|safe }};
 const OUT_STOCK_MONTH_LABELS = {{ out_stock_month_labels|safe }};
 const OUT_STOCK_MONTH_VALUES = {{ out_stock_month_values|safe }};
 
@@ -235,7 +238,16 @@ new Chart(document.getElementById('chartMonthly'), {
   },
   options: {
     responsive: true,
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        color: '#ffffff',
+        font: { size: 10, weight: '600' },
+        anchor: 'center',
+        align: 'center',
+        formatter: (value) => value,
+      }
+    },
     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
   }
 });
@@ -255,29 +267,44 @@ new Chart(document.getElementById('chartWarehouses'), {
   },
   options: {
     responsive: true,
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12 } },
+      datalabels: {
+        color: '#ffffff',
+        font: { size: 10, weight: '600' },
+        formatter: (value) => value,
+      }
+    }
   }
 });
 
-new Chart(document.getElementById('chartDamagedByMonth'), {
-  type: 'line',
+new Chart(document.getElementById('chartDamagedByProduct'), {
+  type: 'bar',
   data: {
-    labels: DAMAGED_MONTH_LABELS,
+    labels: DAMAGED_PRODUCT_LABELS,
     datasets: [{
       label: 'Unidades dañadas',
-      data: DAMAGED_MONTH_VALUES,
-      borderColor: '#fd7e14',
-      backgroundColor: 'rgba(253,126,20,0.25)',
-      fill: true,
-      tension: 0.3,
-      pointRadius: 4,
-      pointBackgroundColor: '#fd7e14'
+      data: DAMAGED_PRODUCT_VALUES,
+      backgroundColor: 'rgba(253,126,20,0.7)',
+      borderRadius: 5,
     }]
   },
   options: {
     responsive: true,
-    plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        color: '#ffffff',
+        font: { size: 10, weight: '600' },
+        anchor: 'center',
+        align: 'center',
+        formatter: (value) => value,
+      }
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 } },
+      x: { ticks: { autoSkip: false, maxRotation: 50, minRotation: 0 } }
+    }
   }
 });
 
@@ -292,13 +319,25 @@ new Chart(document.getElementById('chartOutStockMonthly'), {
       backgroundColor: 'rgba(220,53,69,0.20)',
       fill: true,
       tension: 0.25,
-      pointRadius: 4,
+      pointRadius: 7,
       pointBackgroundColor: '#dc3545'
     }]
   },
   options: {
     responsive: true,
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        color: '#ffffff',
+        font: { size: 9, weight: '600' },
+        anchor: 'center',
+        align: 'center',
+        backgroundColor: '#dc3545',
+        borderRadius: 6,
+        padding: 2,
+        formatter: (value) => value,
+      }
+    },
     scales: {
       y: { beginAtZero: true, ticks: { stepSize: 1 } }
     }

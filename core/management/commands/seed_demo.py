@@ -191,15 +191,21 @@ class Command(BaseCommand):
         for name, sku, cat, unit in products_data:
             Product.objects.get_or_create(name=name, defaults={'sku': sku, 'category': cat, 'unit': unit})
 
-        current_month = today.month
-        for product in Product.objects.all():
-            for wh in [wh1, wh2]:
+        products = list(Product.objects.all())
+        for p_idx, product in enumerate(products):
+            for w_idx, wh in enumerate([wh1, wh2]):
                 expected = random.randint(20, 200)
                 counted = max(expected + random.randint(-25, 8), 0)
                 damaged = random.randint(0, 8)
 
-                # Force a few out-of-stock alerts in the current month for dashboard Top 5.
-                if random.random() < 0.22:
+                # Force a few out-of-stock alerts for consistent monthly demo charts.
+                if random.random() < 0.18:
+                    counted = 0
+
+                # Guarantee at least one out-of-stock record in each of the last 6 months.
+                force_month_offset = None
+                if p_idx < 6 and w_idx == 0:
+                    force_month_offset = p_idx
                     counted = 0
 
                 record = InventoryRecord.objects.create(
@@ -212,8 +218,8 @@ class Command(BaseCommand):
                 )
 
                 # Spread records over recent months to make monthly charts meaningful.
-                month_offset = random.randint(0, 5)
-                record_month = current_month - month_offset
+                month_offset = force_month_offset if force_month_offset is not None else random.randint(0, 5)
+                record_month = today.month - month_offset
                 record_year = today.year
                 if record_month <= 0:
                     record_month += 12

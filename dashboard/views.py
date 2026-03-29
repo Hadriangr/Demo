@@ -44,6 +44,13 @@ def parse_month_value(month_raw, fallback_month):
         return fallback_month
 
 
+def add_months(date_value, months):
+    month_idx = (date_value.year * 12 + date_value.month - 1) + months
+    year = month_idx // 12
+    month = month_idx % 12 + 1
+    return datetime.date(year, month, 1)
+
+
 @login_required
 def index(request):
     from audits.models import Audit
@@ -51,23 +58,16 @@ def index(request):
 
     today = timezone.now().date()
 
-    available_months = [
-        m for m in (
-            InventoryRecord.objects
-            .annotate(month=TruncMonth('recorded_at'))
-            .values_list('month', flat=True)
-            .distinct()
-            .order_by('-month')
-        ) if m
-    ]
+    base_month = today.replace(day=1)
+    month_series_asc = [add_months(base_month, -offset) for offset in range(5, -1, -1)]
+    month_series_desc = list(reversed(month_series_asc))
 
-    default_month = available_months[0].date().replace(day=1) if available_months else today.replace(day=1)
+    default_month = month_series_desc[0]
     selected_month = parse_month_value(request.GET.get('month'), default_month)
+    if selected_month not in month_series_desc:
+        selected_month = default_month
 
-    if selected_month.month == 12:
-        selected_month_end = selected_month.replace(year=selected_month.year + 1, month=1, day=1)
-    else:
-        selected_month_end = selected_month.replace(month=selected_month.month + 1, day=1)
+    selected_month_end = add_months(selected_month, 1)
 
     month_filter = {
         'recorded_at__date__gte': selected_month,
@@ -113,17 +113,7 @@ def index(request):
     wh_labels = [item['warehouse__name'] for item in per_warehouse]
     wh_counts = [item['count'] for item in per_warehouse]
 
-    # Chart: damaged units per month (last 6 months)
-    damaged_monthly = (
-        InventoryRecord.objects
-        .annotate(month=TruncMonth('recorded_at'))
-        .values('month')
-        .annotate(total=Sum('damaged_stock'))
-        .order_by('month')
-    )
-    damaged_month_labels = [month_label_es(item['month']) for item in damaged_monthly if item['month']]
-    damaged_month_values = [int(item['total'] or 0) for item in damaged_monthly if item['month']]
-
+    # Chart: damaged units by product for selected month
     damaged_products_selected_month = (
         InventoryRecord.objects
         .filter(damaged_stock__gt=0, **month_filter)
@@ -131,19 +121,26 @@ def index(request):
         .annotate(total_damaged=Sum('damaged_stock'))
         .order_by('-total_damaged', 'product__name')
     )
+    damaged_product_labels = [item['product__name'] for item in damaged_products_selected_month]
+    damaged_product_values = [int(item['total_damaged'] or 0) for item in damaged_products_selected_month]
 
-    # Chart: products that reached out-of-stock month by month
-    out_of_stock_monthly = (
-        InventoryRecord.objects
-        .filter(counted_stock=0)
-        .annotate(month=TruncMonth('recorded_at'))
-        .values('month')
-        .annotate(products=Count('product', distinct=True))
-        .order_by('month')
-    )
-
-    out_stock_month_labels = [month_label_es(item['month']) for item in out_of_stock_monthly if item['month']]
-    out_stock_month_values = [int(item['products'] or 0) for item in out_of_stock_monthly if item['month']]
+    # Chart: products out of stock month by month (last 6 months)
+    out_stock_month_labels = [month_label_es(m) for m in month_series_asc]
+    out_stock_month_values = []
+    for month_start in month_series_asc:
+        month_end = add_months(month_start, 1)
+        count_for_month = (
+            InventoryRecord.objects
+            .filter(
+                counted_stock=0,
+                recorded_at__date__gte=month_start,
+                recorded_at__date__lt=month_end,
+            )
+            .values('product')
+            .distinct()
+            .count()
+        )
+        out_stock_month_values.append(count_for_month)
 
     out_stock_products_selected_month = (
         InventoryRecord.objects
@@ -160,7 +157,7 @@ def index(request):
             'value': month_value(m),
             'label': month_label_es_full(m),
         }
-        for m in available_months
+        for m in month_series_desc
     ]
 
     context = {
@@ -174,8 +171,8 @@ def index(request):
         'chart_counts': json.dumps(chart_counts),
         'wh_labels': json.dumps(wh_labels),
         'wh_counts': json.dumps(wh_counts),
-        'damaged_month_labels': json.dumps(damaged_month_labels),
-        'damaged_month_values': json.dumps(damaged_month_values),
+        'damaged_product_labels': json.dumps(damaged_product_labels),
+        'damaged_product_values': json.dumps(damaged_product_values),
         'out_stock_month_labels': json.dumps(out_stock_month_labels),
         'out_stock_month_values': json.dumps(out_stock_month_values),
         'month_label': month_label_es_full(selected_month),
