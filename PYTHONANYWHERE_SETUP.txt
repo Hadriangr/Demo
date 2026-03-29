@@ -1,0 +1,49 @@
+PYTHONANYWHERE - PASOS PARA PUBLICAR EL DEMO
+
+1) Subir proyecto a PythonAnywhere
+- Opcion A: subir por Git (recomendado)
+  git clone <tu_repo> Demo
+- Opcion B: subir ZIP y descomprimir en /home/TU_USUARIO/
+
+2) Crear entorno virtual e instalar dependencias
+- En Bash console de PythonAnywhere:
+  mkvirtualenv --python=/usr/bin/python3.11 taham-demo-env
+  workon taham-demo-env
+  cd ~/Demo
+  pip install -r requirements.txt
+
+3) Configurar variables de entorno (opcional pero recomendado)
+- Puedes agregarlas en el archivo WSGI de PythonAnywhere:
+  DJANGO_DEBUG=False
+  DJANGO_ALLOWED_HOSTS=TU_USUARIO.pythonanywhere.com
+  DJANGO_CSRF_TRUSTED_ORIGINS=https://TU_USUARIO.pythonanywhere.com
+  DJANGO_SECRET_KEY=<CLAVE_SECRETA_REAL>
+
+4) Migraciones, static y datos demo
+- En consola con el virtualenv activo:
+  cd ~/Demo
+  python manage.py migrate
+  python manage.py collectstatic --noinput
+  python manage.py seed_demo
+
+5) Configurar Web App en PythonAnywhere
+- En la pestaña Web:
+  a) Create a new web app (Manual configuration, Python 3.11)
+  b) Virtualenv: /home/TU_USUARIO/.virtualenvs/taham-demo-env
+  c) WSGI file: reemplazar contenido con pythonanywhere_wsgi.py
+     (ajustando TU_USUARIO)
+
+6) Static y media mappings (pestaña Web)
+- URL: /static/  -> Directory: /home/TU_USUARIO/Demo/staticfiles
+- URL: /media/   -> Directory: /home/TU_USUARIO/Demo/media
+
+7) Reiniciar Web App
+- Click en Reload en la pestaña Web.
+
+8) Credenciales demo
+- Usuario: admin
+- Password: password123
+
+NOTAS
+- Este demo puede funcionar con SQLite en PythonAnywhere para presentacion.
+- Si luego quieres multiusuario estable, conviene migrar a MySQL o PostgreSQL.

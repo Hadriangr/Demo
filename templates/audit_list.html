@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Auditorías{% endblock %}
+{% block nav_audits %}active-page{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h4 fw-bold mb-0"><i class="bi bi-clipboard-check me-2 text-primary"></i>Auditorías</h1>
+  <a href="{% url 'audits:audit_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Nueva Auditoría
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1">Estado</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1">Bodega</label>
+        <select name="warehouse" class="form-select form-select-sm">
+          <option value="">Todas</option>
+          {% for w in warehouses %}
+          <option value="{{ w.pk }}" {% if warehouse_filter == w.pk|stringformat:"s" %}selected{% endif %}>{{ w.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+        <a href="{% url 'audits:audit_list' %}" class="btn btn-sm btn-outline-secondary ms-1">
+          <i class="bi bi-x-circle me-1"></i>Limpiar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Bodega</th>
+            <th>Template</th>
+            <th>Auditor</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Resultado</th>
+            <th>Cumplimiento</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for audit in audits %}
+          <tr>
+            <td class="text-muted small">{{ audit.pk }}</td>
+            <td class="fw-medium">{{ audit.warehouse.name }}</td>
+            <td>{{ audit.template.name }}</td>
+            <td>{{ audit.auditor.get_full_name|default:audit.auditor.username|default:"–" }}</td>
+            <td>{{ audit.scheduled_date|date:"d/m/Y" }}</td>
+            <td>
+              {% if audit.status == 'completed' %}
+                <span class="badge bg-success">Completada</span>
+              {% elif audit.status == 'in_progress' %}
+                <span class="badge bg-warning text-dark">En Progreso</span>
+              {% else %}
+                <span class="badge bg-secondary">Pendiente</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if audit.result == 'ok' %}
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>OK</span>
+              {% elif audit.result == 'with_observations' %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle me-1"></i>Con Obs.</span>
+              {% elif audit.result == 'critical' %}
+                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Crítica</span>
+              {% else %}–{% endif %}
+            </td>
+            <td>
+              {% if audit.status == 'completed' %}
+                <div class="d-flex align-items-center gap-2" style="min-width:100px">
+                  <div class="progress flex-grow-1" style="height:6px;">
+                    <div class="progress-bar
+                      {% if audit.compliance_pct >= 80 %}bg-success{% elif audit.compliance_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                      style="width:{{ audit.compliance_pct }}%"></div>
+                  </div>
+                  <small>{{ audit.compliance_pct }}%</small>
+                </div>
+              {% else %}–{% endif %}
+            </td>
+            <td class="text-end">
+              {% if audit.status != 'completed' %}
+              <a href="{% url 'audits:audit_checklist' audit.pk %}" class="btn btn-sm btn-warning text-dark" title="Completar checklist">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              {% endif %}
+              <a href="{% url 'audits:audit_detail' audit.pk %}" class="btn btn-sm btn-outline-primary ms-1" title="Ver detalle">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="text-center text-muted py-5">
+              <i class="bi bi-clipboard-x display-5 d-block mb-2"></i>
+              No hay auditorías. <a href="{% url 'audits:audit_create' %}">Crear una</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Auditoría {{ audit.pk }} – Detalle{% endblock %}
+{% block nav_audits %}active-page{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'audits:audit_list' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Volver
+  </a>
+  {% if audit.status != 'completed' %}
+  <a href="{% url 'audits:audit_checklist' audit.pk %}" class="btn btn-sm btn-warning text-dark">
+    <i class="bi bi-pencil-square me-1"></i>Editar Checklist
+  </a>
+  {% endif %}
+</div>
+
+<!-- Header card -->
+<div class="card mb-4 shadow-sm">
+  <div class="card-body">
+    <div class="row align-items-center gy-2">
+      <div class="col-md-6">
+        <h1 class="h4 fw-bold mb-1">
+          <i class="bi bi-clipboard2-data me-2 text-primary"></i>
+          Auditoría #{{ audit.pk }}
+        </h1>
+        <p class="mb-0 text-muted">
+          <i class="bi bi-building me-1"></i>{{ audit.warehouse.name }} &nbsp;|&nbsp;
+          <i class="bi bi-person me-1"></i>{{ audit.auditor.get_full_name|default:audit.auditor.username }}
+        </p>
+        <p class="mb-0 text-muted small">
+          <i class="bi bi-calendar me-1"></i>{{ audit.scheduled_date|date:"d/m/Y" }}
+          {% if audit.completed_date %}
+          &nbsp;·&nbsp; Completada: {{ audit.completed_date|date:"d/m/Y H:i" }}
+          {% endif %}
+        </p>
+      </div>
+      <div class="col-md-3 text-center">
+        {% if audit.status == 'completed' %}
+          <div class="fw-bold display-6 {% if audit.compliance_pct >= 80 %}text-success{% elif audit.compliance_pct >= 60 %}text-warning{% else %}text-danger{% endif %}">
+            {{ audit.compliance_pct }}%
+          </div>
+          <div class="progress mb-1" style="height:8px;">
+            <div class="progress-bar {% if audit.compliance_pct >= 80 %}bg-success{% elif audit.compliance_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                 style="width:{{ audit.compliance_pct }}%"></div>
+          </div>
+          <small class="text-muted">Cumplimiento</small>
+        {% endif %}
+      </div>
+      <div class="col-md-3 text-center">
+        {% if audit.status == 'completed' %}
+          {% if audit.result == 'ok' %}
+            <span class="badge bg-success fs-6 p-2"><i class="bi bi-check-circle me-1"></i>OK</span>
+          {% elif audit.result == 'with_observations' %}
+            <span class="badge bg-warning text-dark fs-6 p-2"><i class="bi bi-exclamation-circle me-1"></i>Con Observaciones</span>
+          {% elif audit.result == 'critical' %}
+            <span class="badge bg-danger fs-6 p-2"><i class="bi bi-x-circle me-1"></i>Crítica</span>
+          {% endif %}
+        {% else %}
+          {% if audit.status == 'in_progress' %}
+            <span class="badge bg-warning text-dark fs-6 p-2">En Progreso</span>
+          {% else %}
+            <span class="badge bg-secondary fs-6 p-2">Pendiente</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% if audit.notes %}
+    <div class="alert alert-light mt-3 mb-0 py-2 small">
+      <i class="bi bi-chat-left-text me-1"></i>{{ audit.notes }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Checklist responses -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white">
+        <i class="bi bi-check2-square me-2 text-primary"></i>Respuestas del Checklist
+        <span class="badge bg-light text-muted border float-end">{{ responses.count }}</span>
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for resp in responses %}
+          <li class="list-group-item py-2 px-3">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <span class="small text-muted flex-grow-1">{{ resp.item.question }}</span>
+              <span class="flex-shrink-0">
+                {% if resp.item.item_type == 'boolean' %}
+                  {% if resp.boolean_value == True %}
+                    <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Sí</span>
+                  {% elif resp.boolean_value == False %}
+                    <span class="badge bg-danger"><i class="bi bi-x me-1"></i>No</span>
+                  {% else %}
+                    <span class="badge bg-light text-muted border">–</span>
+                  {% endif %}
+                {% elif resp.item.item_type == 'number' %}
+                  <span class="badge bg-info text-dark">{{ resp.number_value|default:"–" }}</span>
+                {% else %}
+                  <span class="badge bg-light text-dark border">{{ resp.text_value|default:"–"|truncatechars:30 }}</span>
+                {% endif %}
+              </span>
+            </div>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-center text-muted py-4">Sin respuestas registradas.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Observations -->
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-exclamation-circle me-2 text-warning"></i>Observaciones</span>
+        <span class="badge bg-warning text-dark">{{ observations.count }}</span>
+      </div>
+      <div class="card-body">
+        {% for obs in observations %}
+        <div class="border rounded p-2 mb-2 {% if obs.severity == 'high' %}border-danger{% elif obs.severity == 'medium' %}border-warning{% else %}border-success{% endif %}">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div class="flex-grow-1">
+              <span class="badge badge-severity-{{ obs.severity }} text-white small me-1">
+                {{ obs.get_severity_display }}
+              </span>
+              {% if obs.is_overdue %}
+              <span class="badge bg-danger small">Vencida</span>
+              {% endif %}
+              <p class="mb-1 small mt-1">{{ obs.description }}</p>
+              {% if obs.due_date %}
+              <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Compromiso: {{ obs.due_date|date:"d/m/Y" }}</small>
+              {% endif %}
+            </div>
+            {% if not obs.resolved %}
+            <a href="{% url 'audits:observation_resolve' obs.pk %}" 
+               class="btn btn-sm btn-outline-success flex-shrink-0" 
+               title="Marcar resuelta"
+               onclick="return confirm('¿Marcar como resuelta?')">
+              <i class="bi bi-check2"></i>
+            </a>
+            {% else %}
+            <span class="badge bg-success"><i class="bi bi-check2"></i> Resuelta</span>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted text-center py-2 mb-0 small">Sin observaciones.</p>
+        {% endfor %}
+
+        <!-- Add observation form -->
+        <hr class="my-3">
+        <p class="fw-medium small mb-2">Agregar observación</p>
+        <form method="post" class="row g-2">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="observation">
+          <div class="col-12">{{ obs_form.description }}</div>
+          <div class="col-6">{{ obs_form.severity }}</div>
+          <div class="col-6">{{ obs_form.due_date }}</div>
+          <div class="col-12 d-grid">
+            <button type="submit" class="btn btn-sm btn-outline-warning">
+              <i class="bi bi-plus-circle me-1"></i>Agregar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Evidence -->
+    <div class="card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-images me-2 text-primary"></i>Evidencias Fotográficas</span>
+        <span class="badge bg-secondary">{{ evidences.count }}</span>
+      </div>
+      <div class="card-body">
+        {% if evidences %}
+        <div class="row g-2 mb-3">
+          {% for ev in evidences %}
+          <div class="col-6 col-md-4">
+            <a href="{{ ev.image.url }}" target="_blank">
+              <img src="{{ ev.image.url }}" class="evidence-thumb" alt="{{ ev.caption|default:'Evidencia' }}">
+            </a>
+            {% if ev.caption %}<p class="small text-muted mt-1 mb-0">{{ ev.caption }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <hr class="my-2">
+        <p class="fw-medium small mb-2">Subir foto</p>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="evidence">
+          <div class="mb-2">{{ evidence_form.image }}</div>
+          <div class="mb-2">{{ evidence_form.caption }}</div>
+          <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+            <i class="bi bi-cloud-upload me-1"></i>Subir Imagen
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block nav_inventory %}active-page{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h4 fw-bold mb-0"><i class="bi bi-boxes me-2 text-primary"></i>Inventario</h1>
+</div>
+
+<!-- Warehouse filter -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-7 col-md-4">
+        <label class="form-label small mb-1">Filtrar por bodega</label>
+        <select name="warehouse" class="form-select form-select-sm">
+          <option value="">Todas las bodegas</option>
+          {% for w in warehouses %}
+          <option value="{{ w.pk }}" {% if warehouse_filter == w.pk|stringformat:"s" %}selected{% endif %}>{{ w.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+        <a href="{% url 'inventory:inventory_list' %}" class="btn btn-sm btn-outline-secondary ms-1">
+          <i class="bi bi-x-circle me-1"></i>Limpiar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Producto</th>
+            <th>SKU</th>
+            <th>Categoría</th>
+            <th>Bodega</th>
+            <th style="width:130px">Stock Esperado</th>
+            <th style="width:130px">Stock Contado</th>
+            <th style="width:130px">Unid. Dañadas</th>
+            <th>Diferencia</th>
+            <th>Notas</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record, form in records_with_forms %}
+          <tr>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="record_id" value="{{ record.pk }}">
+              <td class="fw-medium">{{ record.product.name }}</td>
+              <td class="text-muted small">{{ record.product.sku }}</td>
+              <td>{{ record.product.category.name|default:"–" }}</td>
+              <td>{{ record.warehouse.name }}</td>
+              <td>{{ form.expected_stock }}</td>
+              <td>{{ form.counted_stock }}</td>
+              <td>{{ form.damaged_stock }}</td>
+              <td>
+                {% with diff=record.difference %}
+                  {% if diff == 0 %}
+                    <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>{{ diff }}</span>
+                  {% elif diff < 0 %}
+                    <span class="badge bg-danger"><i class="bi bi-arrow-down me-1"></i>{{ diff }}</span>
+                  {% else %}
+                    <span class="badge bg-info text-dark"><i class="bi bi-arrow-up me-1"></i>+{{ diff }}</span>
+                  {% endif %}
+                {% endwith %}
+              </td>
+              <td>{{ form.notes }}</td>
+              <td>
+                <button type="submit" class="btn btn-sm btn-primary">
+                  <i class="bi bi-save"></i>
+                </button>
+              </td>
+            </form>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="text-center text-muted py-5">
+              <i class="bi bi-box display-5 d-block mb-2"></i>
+              No hay registros de inventario.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="text-muted small mt-2">
+  <i class="bi bi-info-circle me-1"></i>
+  Modifica los valores y presiona <i class="bi bi-save"></i> en cada fila para guardar.
+  La diferencia se calcula automáticamente.
+</div>
+{% endblock %}

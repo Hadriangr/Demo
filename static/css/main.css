@@ -1,0 +1,120 @@
+/* ============================================================
+  Taham spa - Custom CSS
+  ============================================================ */
+
+:root {
+  --primary: #0d6efd;
+  --success: #198754;
+  --danger: #dc3545;
+  --warning: #ffc107;
+}
+
+body {
+  font-size: 0.93rem;
+}
+
+/* Cards */
+.card {
+  border: none;
+  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+  border-radius: .75rem;
+}
+.card-header {
+  border-radius: .75rem .75rem 0 0 !important;
+  font-weight: 600;
+}
+
+/* Stat cards */
+.stat-card {
+  transition: transform .15s;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+.stat-card .stat-icon {
+  font-size: 2.5rem;
+  opacity: .85;
+}
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.stat-card .stat-label {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  opacity: .75;
+}
+
+/* Compliance badge */
+.compliance-bar {
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Tables */
+.table-hover tbody tr:hover {
+  background-color: rgba(13,110,253,.04);
+}
+
+/* Checklist items */
+.checklist-item {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: .5rem;
+  padding: 1rem;
+  margin-bottom: .75rem;
+  transition: border-color .15s;
+}
+.checklist-item:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13,110,253,.1);
+}
+.checklist-item label {
+  font-weight: 500;
+  margin-bottom: .4rem;
+  display: block;
+}
+
+/* Login page */
+.login-card {
+  max-width: 420px;
+  margin: 6vh auto;
+}
+.login-logo {
+  font-size: 3rem;
+  color: var(--primary);
+}
+
+/* Navbar active */
+.nav-link.active-page {
+  font-weight: 600;
+  background: rgba(255,255,255,.15);
+  border-radius: .3rem;
+}
+
+/* Evidence images */
+.evidence-thumb {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: .5rem;
+  cursor: pointer;
+  transition: transform .2s;
+}
+.evidence-thumb:hover {
+  transform: scale(1.03);
+}
+
+/* Severity badges */
+.badge-severity-high   { background-color: #dc3545; }
+.badge-severity-medium { background-color: #fd7e14; }
+.badge-severity-low    { background-color: #198754; }
+
+/* Mobile tweaks */
+@media (max-width: 576px) {
+  .stat-value { font-size: 1.5rem !important; }
+  .stat-icon  { font-size: 1.8rem !important; }
+  h1 { font-size: 1.3rem; }
+}

@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active-page{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h1 class="h4 fw-bold mb-0"><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard</h1>
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2 align-items-center">
+      <label for="month" class="small text-muted mb-0">Mes:</label>
+      <select id="month" name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for opt in month_options %}
+        <option value="{{ opt.value }}" {% if selected_month_value == opt.value %}selected{% endif %}>{{ opt.label|title }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <a href="{% url 'audits:audit_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>Nueva Auditoría
+    </a>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center p-3 h-100 border-start border-4 border-primary">
+      <div class="stat-icon text-primary"><i class="bi bi-clipboard-data"></i></div>
+      <div class="stat-value text-primary mt-1">{{ total_audits }}</div>
+      <div class="stat-label text-muted">Total Auditorías</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center p-3 h-100 border-start border-4 border-warning">
+      <div class="stat-icon text-warning"><i class="bi bi-hourglass-split"></i></div>
+      <div class="stat-value text-warning mt-1">{{ pending_audits }}</div>
+      <div class="stat-label text-muted">Auditorías Pendientes</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center p-3 h-100 border-start border-4 border-danger">
+      <div class="stat-icon text-danger"><i class="bi bi-bell-fill"></i></div>
+      <div class="stat-value text-danger mt-1">{{ inventory_alerts }}</div>
+      <div class="stat-label text-muted">Alertas Inventario</div>
+      <small class="text-muted">Faltas: {{ shortage_count }} · Daños: {{ damaged_count }}</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center p-3 h-100 border-start border-4 border-success">
+      <div class="stat-icon text-success"><i class="bi bi-patch-check-fill"></i></div>
+      <div class="stat-value text-success mt-1">{{ avg_compliance }}%</div>
+      <div class="stat-label text-muted">% Cumplimiento</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="row g-3 mb-4">
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-header bg-white">
+        <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Auditorías por Mes
+      </div>
+      <div class="card-body">
+        <canvas id="chartMonthly" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header bg-white">
+        <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Por Bodega
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="chartWarehouses" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-header bg-white">
+        <i class="bi bi-tools me-2 text-warning"></i>Unidades Dañadas por Mes
+      </div>
+      <div class="card-body">
+        <canvas id="chartDamagedByMonth" height="220"></canvas>
+        <hr>
+        <h6 class="small text-muted mb-2">Productos dañados en {{ month_label }}</h6>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-end">Unidades dañadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in damaged_products_selected_month %}
+              <tr>
+                <td>{{ item.product__name }}</td>
+                <td class="text-end"><span class="badge bg-warning text-dark">{{ item.total_damaged }}</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">Sin productos dañados este mes.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header bg-white">
+        <i class="bi bi-box-seam me-2 text-danger"></i>Productos Sin Stock Mensual
+      </div>
+      <div class="card-body">
+        <canvas id="chartOutStockMonthly" height="220"></canvas>
+        <hr>
+        <h6 class="small text-muted mb-2">Productos sin stock en {{ month_label }}</h6>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-end">Bodegas sin stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in out_stock_products_selected_month %}
+              <tr>
+                <td>{{ item.product__name }}</td>
+                <td class="text-end"><span class="badge bg-danger">{{ item.warehouses }}</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">Sin productos agotados este mes.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent audits -->
+<div class="card">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history me-2 text-primary"></i>Auditorías Recientes</span>
+    <a href="{% url 'audits:audit_list' %}" class="btn btn-outline-primary btn-sm">Ver todas</a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Bodega</th>
+            <th>Auditor</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Cumplimiento</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for audit in recent_audits %}
+          <tr>
+            <td class="fw-medium">{{ audit.warehouse.name }}</td>
+            <td>{{ audit.auditor.get_full_name|default:audit.auditor.username }}</td>
+            <td>{{ audit.scheduled_date|date:"d/m/Y" }}</td>
+            <td>
+              {% if audit.status == 'completed' %}
+                <span class="badge bg-success">Completada</span>
+              {% elif audit.status == 'in_progress' %}
+                <span class="badge bg-warning text-dark">En Progreso</span>
+              {% else %}
+                <span class="badge bg-secondary">Pendiente</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if audit.status == 'completed' %}
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height:6px;">
+                    <div class="progress-bar
+                      {% if audit.compliance_pct >= 80 %}bg-success{% elif audit.compliance_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                      style="width:{{ audit.compliance_pct }}%"></div>
+                  </div>
+                  <small>{{ audit.compliance_pct }}%</small>
+                </div>
+              {% else %}–{% endif %}
+            </td>
+            <td>
+              <a href="{% url 'audits:audit_detail' audit.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No hay auditorías aún.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+const MONTHS = {{ chart_months|safe }};
+const COUNTS = {{ chart_counts|safe }};
+const WH_LABELS = {{ wh_labels|safe }};
+const WH_COUNTS = {{ wh_counts|safe }};
+const DAMAGED_MONTH_LABELS = {{ damaged_month_labels|safe }};
+const DAMAGED_MONTH_VALUES = {{ damaged_month_values|safe }};
+const OUT_STOCK_MONTH_LABELS = {{ out_stock_month_labels|safe }};
+const OUT_STOCK_MONTH_VALUES = {{ out_stock_month_values|safe }};
+
+new Chart(document.getElementById('chartMonthly'), {
+  type: 'bar',
+  data: {
+    labels: MONTHS,
+    datasets: [{
+      label: 'Auditorías',
+      data: COUNTS,
+      backgroundColor: 'rgba(13,110,253,0.7)',
+      borderRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  }
+});
+
+const palette = [
+  '#0d6efd','#198754','#ffc107','#dc3545','#6f42c1','#0dcaf0','#fd7e14','#20c997'
+];
+new Chart(document.getElementById('chartWarehouses'), {
+  type: 'doughnut',
+  data: {
+    labels: WH_LABELS,
+    datasets: [{
+      data: WH_COUNTS,
+      backgroundColor: palette,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+  }
+});
+
+new Chart(document.getElementById('chartDamagedByMonth'), {
+  type: 'line',
+  data: {
+    labels: DAMAGED_MONTH_LABELS,
+    datasets: [{
+      label: 'Unidades dañadas',
+      data: DAMAGED_MONTH_VALUES,
+      borderColor: '#fd7e14',
+      backgroundColor: 'rgba(253,126,20,0.25)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 4,
+      pointBackgroundColor: '#fd7e14'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  }
+});
+
+new Chart(document.getElementById('chartOutStockMonthly'), {
+  type: 'line',
+  data: {
+    labels: OUT_STOCK_MONTH_LABELS,
+    datasets: [{
+      label: 'Productos sin stock',
+      data: OUT_STOCK_MONTH_VALUES,
+      borderColor: '#dc3545',
+      backgroundColor: 'rgba(220,53,69,0.20)',
+      fill: true,
+      tension: 0.25,
+      pointRadius: 4,
+      pointBackgroundColor: '#dc3545'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 } }
+    }
+  }
+});
+</script>
+{% endblock %}

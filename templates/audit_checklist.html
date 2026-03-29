@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Checklist – Auditoría {{ audit.pk }}{% endblock %}
+{% block nav_audits %}active-page{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{% url 'audits:audit_list' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Volver
+  </a>
+</div>
+
+<div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
+  <div>
+    <h1 class="h4 fw-bold mb-0">
+      <i class="bi bi-list-check me-2 text-primary"></i>Checklist
+    </h1>
+    <p class="text-muted small mb-0">
+      Bodega: <strong>{{ audit.warehouse.name }}</strong> &nbsp;|&nbsp;
+      Template: <strong>{{ audit.template.name }}</strong>
+    </p>
+  </div>
+  {% if audit.compliance_pct > 0 %}
+  <div class="text-end">
+    <div class="fw-bold text-primary fs-5">{{ audit.compliance_pct }}%</div>
+    <div class="text-muted small">Cumplimiento actual</div>
+    <div class="progress mt-1" style="height:6px; width:120px;">
+      <div class="progress-bar {% if audit.compliance_pct >= 80 %}bg-success{% elif audit.compliance_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+           style="width:{{ audit.compliance_pct }}%"></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {% for entry in items_with_fields %}
+  <div class="checklist-item">
+    <label for="id_item_{{ entry.item.pk }}">
+      <span class="badge bg-light text-muted border me-2 small">{{ forloop.counter }}</span>
+      {{ entry.item.question }}
+      {% if entry.item.required %}<span class="text-danger ms-1">*</span>{% endif %}
+    </label>
+
+    {% if entry.item.item_type == 'boolean' %}
+      <select name="{{ entry.field_name }}" id="id_item_{{ entry.item.pk }}" class="form-select">
+        <option value="" {% if entry.current_value is None %}selected{% endif %}>-- Seleccionar --</option>
+        <option value="True" {% if entry.current_value == True %}selected{% endif %}>✅ Sí / OK</option>
+        <option value="False" {% if entry.current_value == False %}selected{% endif %}>❌ No / Falla</option>
+      </select>
+
+    {% elif entry.item.item_type == 'number' %}
+      <input type="number" step="any" name="{{ entry.field_name }}" id="id_item_{{ entry.item.pk }}"
+             class="form-control"
+             value="{{ entry.current_value|default:'' }}">
+
+    {% else %}
+      <textarea name="{{ entry.field_name }}" id="id_item_{{ entry.item.pk }}"
+                class="form-control" rows="2">{{ entry.current_value|default:'' }}</textarea>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="alert alert-warning">
+    Este template no tiene ítems configurados.
+  </div>
+  {% endfor %}
+
+  <div class="d-flex gap-2 justify-content-end mt-4 flex-wrap">
+    <button type="submit" name="action" value="save" class="btn btn-outline-secondary btn-lg">
+      <i class="bi bi-save me-2"></i>Guardar borrador
+    </button>
+    <button type="submit" name="action" value="complete" class="btn btn-success btn-lg">
+      <i class="bi bi-check2-all me-2"></i>Finalizar Auditoría
+    </button>
+  </div>
+</form>
+{% endblock %}
