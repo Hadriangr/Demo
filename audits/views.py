@@ -47,6 +47,10 @@ def audit_create(request):
 @login_required
 def audit_checklist(request, pk):
     audit = get_object_or_404(Audit, pk=pk)
+    if audit.status == 'completed':
+        messages.info(request, 'La auditoria ya esta completada. Se muestra el detalle final.')
+        return redirect('audits:audit_detail', pk=audit.pk)
+
     items = audit.template.items.all()
 
     # Build dynamic fields dict keyed by item.pk

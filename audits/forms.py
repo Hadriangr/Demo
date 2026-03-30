@@ -6,6 +6,12 @@ class AuditCreateForm(forms.ModelForm):
     class Meta:
         model = Audit
         fields = ['warehouse', 'template', 'scheduled_date', 'notes']
+        labels = {
+            'warehouse': 'Bodega',
+            'template': 'Plantilla',
+            'scheduled_date': 'Fecha programada',
+            'notes': 'Notas generales',
+        }
         widgets = {
             'scheduled_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'warehouse': forms.Select(attrs={'class': 'form-select'}),

@@ -62,19 +62,32 @@ class Command(BaseCommand):
             tmpl.save()
 
         items_data = [
-            ('¿El área de recepción está limpia y ordenada?', 'boolean'),
-            ('¿Los productos están correctamente etiquetados?', 'boolean'),
-            ('¿Las vías de evacuación están despejadas?', 'boolean'),
-            ('¿Los extintores están vigentes y accesibles?', 'boolean'),
-            ('¿El sistema de iluminación funciona correctamente?', 'boolean'),
-            ('¿Los productos perecibles están en temperatura adecuada?', 'boolean'),
-            ('¿Se cumplen las normas de apilamiento?', 'boolean'),
-            ('Temperatura registrada en cámara fría (°C)', 'number'),
-            ('¿El personal usa EPP correctamente?', 'boolean'),
-            ('¿Los registros de entrada/salida están al día?', 'boolean'),
-            ('Observaciones adicionales del área de almacenamiento', 'text'),
+            ('¿El SKU y nombre del producto coinciden con el registro del sistema?', 'boolean'),
+            ('¿El conteo físico fue validado por bodega y auditor?', 'boolean'),
+            ('¿Los productos con diferencia negativa fueron reportados?', 'boolean'),
+            ('¿Los productos con stock contado en 0 tienen alerta registrada?', 'boolean'),
+            ('¿Las unidades dañadas fueron identificadas y separadas?', 'boolean'),
+            ('¿Se adjuntó evidencia fotográfica en hallazgos críticos?', 'boolean'),
+            ('¿Se definió fecha de compromiso para observaciones abiertas?', 'boolean'),
+            ('Cantidad de productos con quiebre de stock detectados', 'number'),
+            ('Total de unidades dañadas detectadas', 'number'),
+            ('Observaciones generales del inventario auditado', 'text'),
         ]
-        if not tmpl.items.exists():
+
+        # Keep demo template aligned with current inventory-focused flow.
+        existing_items = list(tmpl.items.order_by('order'))
+        requires_reset = (
+            len(existing_items) != len(items_data)
+            or any(
+                idx >= len(existing_items)
+                or existing_items[idx].question != question
+                or existing_items[idx].item_type != itype
+                for idx, (question, itype) in enumerate(items_data)
+            )
+        )
+
+        if requires_reset:
+            tmpl.items.all().delete()
             for i, (question, itype) in enumerate(items_data):
                 AuditItem.objects.create(
                     template=tmpl,
@@ -83,7 +96,7 @@ class Command(BaseCommand):
                     order=i,
                     required=(itype != 'text'),
                 )
-            self.stdout.write('  ✓ Template e ítems creados')
+            self.stdout.write('  ✓ Template e ítems actualizados al flujo de inventario')
 
         # ── Audits ────────────────────────────────────────────────────
         today = timezone.now().date()
