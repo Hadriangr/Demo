@@ -77,12 +77,19 @@ def index(request):
     total_audits = Audit.objects.count()
     pending_audits = Audit.objects.filter(status__in=['pending', 'in_progress']).count()
 
+    # Global alert counters (must match Alerts module badge/count behavior).
     shortage_count = InventoryRecord.objects.filter(
+        counted_stock__lt=models.F('expected_stock')
+    ).count()
+    damaged_count = InventoryRecord.objects.filter(damaged_stock__gt=0).count()
+    inventory_alerts = shortage_count + damaged_count
+
+    # Selected-month counters for contextual info in dashboard filter.
+    month_shortage_count = InventoryRecord.objects.filter(
         counted_stock__lt=models.F('expected_stock'),
         **month_filter,
     ).count()
-    damaged_count = InventoryRecord.objects.filter(damaged_stock__gt=0, **month_filter).count()
-    inventory_alerts = shortage_count + damaged_count
+    month_damaged_count = InventoryRecord.objects.filter(damaged_stock__gt=0, **month_filter).count()
 
     completed = Audit.objects.filter(status='completed')
     if completed.exists():
@@ -166,6 +173,8 @@ def index(request):
         'inventory_alerts': inventory_alerts,
         'shortage_count': shortage_count,
         'damaged_count': damaged_count,
+        'month_shortage_count': month_shortage_count,
+        'month_damaged_count': month_damaged_count,
         'avg_compliance': avg_compliance,
         'chart_months': json.dumps(chart_months),
         'chart_counts': json.dumps(chart_counts),

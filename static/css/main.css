@@ -13,6 +13,12 @@ body {
   font-size: 0.93rem;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip; /* clip: prevents page-level horizontal overflow without breaking .table-responsive scroll */
+}
+
 /* Avoid mobile zoom on form focus and improve touch targets */
 input,
 select,
@@ -70,11 +76,62 @@ textarea,
 
 .table th,
 .table td {
-  white-space: nowrap;
+  white-space: normal;
+  vertical-align: middle;
 }
 
 .chart-canvas {
   width: 100% !important;
+}
+
+.text-wrap-two {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.tiny {
+  font-size: .74rem;
+}
+
+.inventory-product-cell {
+  max-width: 15ch;
+  min-width: 15ch;
+  word-break: break-word;
+}
+
+.inventory-notes-input {
+  min-width: 180px;
+}
+
+.inventory-notes-cell {
+  min-width: 210px;
+}
+
+.inventory-table {
+  font-size: .84rem;
+}
+
+.inventory-table .inventory-numeric-input {
+  font-size: .9rem;
+  padding: .2rem .45rem;
+  min-height: 34px;
+}
+
+.inventory-diff-badge {
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.recent-audits-table-wrap td,
+.recent-audits-table-wrap th {
+  font-size: .86rem;
+}
+
+.audit-mobile-btn {
+  min-width: 38px;
 }
 
 /* Checklist items */
@@ -152,6 +209,19 @@ textarea,
     font-size: .82rem;
   }
 
+  .inventory-notes-input {
+    min-width: 150px;
+  }
+
+  .inventory-table {
+    font-size: .78rem;
+  }
+
+  .inventory-table .inventory-numeric-input {
+    font-size: .82rem;
+    min-height: 32px;
+  }
+
   .btn {
     min-height: 42px;
   }
@@ -170,11 +240,143 @@ textarea,
     font-size: .78rem;
   }
 
-  .btn {
-    width: 100%;
+  .recent-audits-mobile .badge {
+    font-size: .68rem;
+  }
+
+  .recent-audits-mobile .small {
+    font-size: .75rem;
   }
 
   .chart-canvas {
     max-height: 210px;
+  }
+}
+
+/* Ultra-mobile layout tuned for 300x900 screens */
+@media (max-width: 360px) {
+  body {
+    font-size: .82rem;
+  }
+
+  .container,
+  .container-fluid {
+    padding-left: .55rem !important;
+    padding-right: .55rem !important;
+  }
+
+  main.container-fluid.py-4 {
+    padding-top: .8rem !important;
+    padding-bottom: .8rem !important;
+  }
+
+  h1,
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5 {
+    line-height: 1.2;
+  }
+
+  .card {
+    border-radius: .6rem;
+  }
+
+  .card-header {
+    padding: .55rem .65rem;
+    font-size: .78rem;
+  }
+
+  .card-body {
+    padding: .65rem;
+  }
+
+  .alert {
+    font-size: .76rem;
+    padding: .45rem .55rem;
+  }
+
+  .navbar-brand {
+    font-size: .98rem;
+  }
+
+  .navbar-brand i {
+    margin-right: .35rem !important;
+  }
+
+  .nav-link {
+    padding: .45rem .55rem;
+    font-size: .85rem;
+  }
+
+  .btn,
+  .form-control,
+  .form-select {
+    font-size: 15px !important;
+    min-height: 36px;
+    padding: .35rem .5rem;
+  }
+
+  .btn.btn-sm {
+    min-height: 32px;
+    padding: .28rem .45rem;
+  }
+
+  .table {
+    font-size: .72rem;
+  }
+
+  .table th,
+  .table td {
+    padding: .36rem .28rem;
+  }
+
+  .badge {
+    font-size: .66rem;
+    padding: .3em .42em;
+  }
+
+  .chart-canvas {
+    max-height: 170px;
+  }
+
+  .stat-card {
+    padding: .6rem .45rem !important;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.25rem !important;
+  }
+
+  .stat-card .stat-icon {
+    font-size: 1.35rem !important;
+  }
+
+  .stat-card .stat-label {
+    font-size: .62rem;
+    letter-spacing: .02em;
+  }
+
+  .checklist-item {
+    padding: .7rem;
+    margin-bottom: .6rem;
+  }
+
+  .checklist-item label {
+    font-size: .8rem;
+  }
+
+  .login-card {
+    margin: 3vh auto;
+    padding: 1rem !important;
+  }
+
+  .login-logo {
+    font-size: 2.2rem;
+  }
+
+  .evidence-thumb {
+    height: 120px;
   }
 }

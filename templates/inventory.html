@@ -85,22 +85,20 @@
   </div>
 </div>
 
-<!-- Table -->
-<div class="card">
+<!-- Desktop table -->
+<div class="card d-none d-md-block">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle mb-0 inventory-table">
         <thead class="table-light">
           <tr>
-            <th>Producto</th>
+            <th style="min-width:180px">Producto</th>
             <th>SKU</th>
             <th>Categoría</th>
-            <th>Bodega</th>
             <th style="width:130px">Stock Esperado</th>
             <th style="width:130px">Stock Contado</th>
             <th style="width:130px">Unid. Dañadas</th>
             <th>Diferencia</th>
-            <th>Notas</th>
             <th></th>
           </tr>
         </thead>
@@ -111,25 +109,23 @@
               {% csrf_token %}
               <input type="hidden" name="form_type" value="update_record">
               <input type="hidden" name="record_id" value="{{ record.pk }}">
-              <td class="fw-medium">{{ record.product.name }}</td>
+              <td class="fw-medium inventory-product-cell text-wrap-two">{{ record.product.name }}</td>
               <td class="text-muted small">{{ record.product.sku }}</td>
-              <td>{{ record.product.category.name|default:"–" }}</td>
-              <td>{{ record.warehouse.name }}</td>
+              <td class="text-wrap-two">{{ record.product.category.name|default:"–" }}</td>
               <td>{{ form.expected_stock }}</td>
               <td>{{ form.counted_stock }}</td>
               <td>{{ form.damaged_stock }}</td>
               <td>
                 {% with diff=record.difference %}
                   {% if diff == 0 %}
-                    <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>{{ diff }}</span>
+                    <span class="badge bg-success inventory-diff-badge"><i class="bi bi-check2 me-1"></i>{{ diff }}</span>
                   {% elif diff < 0 %}
-                    <span class="badge bg-danger"><i class="bi bi-arrow-down me-1"></i>{{ diff }}</span>
+                    <span class="badge bg-danger inventory-diff-badge"><i class="bi bi-arrow-down me-1"></i>{{ diff }}</span>
                   {% else %}
-                    <span class="badge bg-info text-dark"><i class="bi bi-arrow-up me-1"></i>+{{ diff }}</span>
+                    <span class="badge bg-info text-dark inventory-diff-badge"><i class="bi bi-arrow-up me-1"></i>+{{ diff }}</span>
                   {% endif %}
                 {% endwith %}
               </td>
-              <td>{{ form.notes }}</td>
               <td>
                 <button type="submit" class="btn btn-sm btn-primary">
                   <i class="bi bi-save"></i>
@@ -139,7 +135,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="10" class="text-center text-muted py-5">
+            <td colspan="8" class="text-center text-muted py-5">
               <i class="bi bi-box display-5 d-block mb-2"></i>
               No hay registros de inventario.
             </td>
@@ -151,9 +147,65 @@
   </div>
 </div>
 
+<!-- Mobile cards -->
+<div class="d-md-none">
+  {% for record, form in records_with_forms %}
+  <div class="card mb-2">
+    <div class="card-body py-2 px-3">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="update_record">
+        <input type="hidden" name="record_id" value="{{ record.pk }}">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="fw-semibold">{{ record.product.name }}</div>
+            <div class="small text-muted">{{ record.product.sku }} · {{ record.product.category.name|default:"–" }}</div>
+          </div>
+          <div class="ms-2">
+            {% with diff=record.difference %}
+              {% if diff == 0 %}
+                <span class="badge bg-success inventory-diff-badge"><i class="bi bi-check2 me-1"></i>{{ diff }}</span>
+              {% elif diff < 0 %}
+                <span class="badge bg-danger inventory-diff-badge"><i class="bi bi-arrow-down me-1"></i>{{ diff }}</span>
+              {% else %}
+                <span class="badge bg-info text-dark inventory-diff-badge"><i class="bi bi-arrow-up me-1"></i>+{{ diff }}</span>
+              {% endif %}
+            {% endwith %}
+          </div>
+        </div>
+        <div class="row g-2 align-items-end">
+          <div class="col-4">
+            <label class="form-label small mb-1">Esperado</label>
+            {{ form.expected_stock }}
+          </div>
+          <div class="col-4">
+            <label class="form-label small mb-1">Contado</label>
+            {{ form.counted_stock }}
+          </div>
+          <div class="col-4">
+            <label class="form-label small mb-1">Dañados</label>
+            {{ form.damaged_stock }}
+          </div>
+        </div>
+        <div class="d-grid mt-2">
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-save me-1"></i>Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-box display-5 d-block mb-2"></i>
+    No hay registros de inventario.
+  </div>
+  {% endfor %}
+</div>
+
 <div class="text-muted small mt-2">
   <i class="bi bi-info-circle me-1"></i>
-  Modifica los valores y presiona <i class="bi bi-save"></i> en cada fila para guardar.
+  Modifica los valores y presiona <i class="bi bi-save"></i> para guardar.
   La diferencia se calcula automáticamente.
 </div>
 {% endblock %}

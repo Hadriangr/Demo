@@ -40,8 +40,9 @@
     <div class="card stat-card text-center p-3 h-100 border-start border-4 border-danger">
       <div class="stat-icon text-danger"><i class="bi bi-bell-fill"></i></div>
       <div class="stat-value text-danger mt-1">{{ inventory_alerts }}</div>
-      <div class="stat-label text-muted">Alertas Inventario</div>
-      <small class="text-muted">Faltas: {{ shortage_count }} · Daños: {{ damaged_count }}</small>
+      <div class="stat-label text-muted">Alertas Inventario (Global)</div>
+      <small class="text-muted d-block">Faltas: {{ shortage_count }} · Daños: {{ damaged_count }}</small>
+      <small class="text-muted d-block">{{ month_label|title }}: {{ month_shortage_count }} · {{ month_damaged_count }}</small>
     </div>
   </div>
   <div class="col-6 col-md-3">
@@ -154,8 +155,8 @@
     <span><i class="bi bi-clock-history me-2 text-primary"></i>Auditorías Recientes</span>
     <a href="{% url 'audits:audit_list' %}" class="btn btn-outline-primary btn-sm">Ver todas</a>
   </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
+  <div class="card-body p-0 d-none d-md-block">
+    <div class="table-responsive recent-audits-table-wrap">
       <table class="table table-hover mb-0 align-middle">
         <thead class="table-light">
           <tr>
@@ -206,6 +207,44 @@
         </tbody>
       </table>
     </div>
+  </div>
+  <div class="card-body d-md-none p-2 recent-audits-mobile">
+    {% for audit in recent_audits %}
+    <div class="border rounded p-2 mb-2 bg-white">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-semibold small text-wrap-two">{{ audit.warehouse.name|truncatechars:40 }}</div>
+          <div class="text-muted tiny">{{ audit.auditor.get_full_name|default:audit.auditor.username|truncatechars:30 }}</div>
+          <div class="text-muted tiny">{{ audit.scheduled_date|date:"d/m/Y" }}</div>
+        </div>
+        <a href="{% url 'audits:audit_detail' audit.pk %}" class="btn btn-sm btn-outline-primary audit-mobile-btn">
+          <i class="bi bi-eye"></i>
+        </a>
+      </div>
+      <div class="mt-2 d-flex justify-content-between align-items-center gap-2">
+        <div>
+          {% if audit.status == 'completed' %}
+            <span class="badge bg-success">Completada</span>
+          {% elif audit.status == 'in_progress' %}
+            <span class="badge bg-warning text-dark">En Progreso</span>
+          {% else %}
+            <span class="badge bg-secondary">Pendiente</span>
+          {% endif %}
+        </div>
+        <div class="small text-muted">
+          {% if audit.status == 'completed' %}{{ audit.compliance_pct }}%{% else %}--{% endif %}
+        </div>
+      </div>
+      {% if audit.status == 'completed' %}
+      <div class="progress mt-2" style="height:6px;">
+        <div class="progress-bar {% if audit.compliance_pct >= 80 %}bg-success{% elif audit.compliance_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+             style="width:{{ audit.compliance_pct }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="text-center text-muted py-3">No hay auditorías aún.</div>
+    {% endfor %}
   </div>
 </div>
 {% endblock %}

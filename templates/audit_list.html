@@ -44,8 +44,8 @@
   </div>
 </div>
 
-<!-- Table -->
-<div class="card">
+<!-- Desktop table -->
+<div class="card d-none d-md-block">
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
@@ -123,5 +123,68 @@
       </table>
     </div>
   </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="d-md-none">
+  {% for audit in audits %}
+  <div class="card mb-2">
+    <div class="card-body py-2 px-3">
+      <div class="d-flex justify-content-between align-items-start mb-1">
+        <div>
+          <span class="fw-semibold">{{ audit.warehouse.name }}</span>
+          <span class="text-muted small ms-1">#{{ audit.pk }}</span>
+        </div>
+        <div class="d-flex gap-1 flex-wrap justify-content-end">
+          {% if audit.status == 'completed' %}
+            <span class="badge bg-success">Completada</span>
+          {% elif audit.status == 'in_progress' %}
+            <span class="badge bg-warning text-dark">En Progreso</span>
+          {% else %}
+            <span class="badge bg-secondary">Pendiente</span>
+          {% endif %}
+          {% if audit.result == 'ok' %}
+            <span class="badge bg-success">OK</span>
+          {% elif audit.result == 'with_observations' %}
+            <span class="badge bg-warning text-dark">Obs.</span>
+          {% elif audit.result == 'critical' %}
+            <span class="badge bg-danger">Crítica</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="text-muted small mb-1">{{ audit.template.name }}</div>
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="small text-muted">
+          <i class="bi bi-person me-1"></i>{{ audit.auditor.get_full_name|default:audit.auditor.username|default:"–" }}
+          <span class="ms-2"><i class="bi bi-calendar me-1"></i>{{ audit.scheduled_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="d-flex gap-1">
+          {% if audit.status != 'completed' %}
+          <a href="{% url 'audits:audit_checklist' audit.pk %}" class="btn btn-sm btn-warning text-dark">
+            <i class="bi bi-pencil-square"></i>
+          </a>
+          {% endif %}
+          <a href="{% url 'audits:audit_detail' audit.pk %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye"></i>
+          </a>
+        </div>
+      </div>
+      {% if audit.status == 'completed' %}
+      <div class="d-flex align-items-center gap-2 mt-1">
+        <div class="progress flex-grow-1" style="height:5px;">
+          <div class="progress-bar {% if audit.compliance_pct >= 80 %}bg-success{% elif audit.compliance_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+            style="width:{{ audit.compliance_pct }}%"></div>
+        </div>
+        <small class="text-muted">{{ audit.compliance_pct }}%</small>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-clipboard-x display-5 d-block mb-2"></i>
+    No hay auditorías. <a href="{% url 'audits:audit_create' %}">Crear una</a>
+  </div>
+  {% endfor %}
 </div>
 {% endblock %}
